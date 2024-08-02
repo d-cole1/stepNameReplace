@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+import functions_new as fn
 
 sg.theme("Default1")
 
@@ -13,7 +14,6 @@ BOM_choose = sg.FileBrowse("Select BOM",
                            pad=(5, 5))
 
 exec_button = sg.Button("Execute",
-                        key="execute",
                         pad=(5, 5),
                         button_color=('White', 'NavyBlue'))
 
@@ -26,9 +26,16 @@ window = sg.Window(title="Step Name Replace",
 while True:
     event, values = window.read()
 
-    print(event, values)
-
-    if event == sg.WIN_CLOSED:
+    if event == sg.WIN_CLOSED or event == "Exit":
         break
+
+    # Gets correct amount of .stp files from folder when gui executed
+    stp_files = fn.stpFinder(values['source'])
+    stp_files = [stp_file.replace("\\", "/") for stp_file in stp_files]
+
+
+
+
+
 
 window.close()
