@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 import functions_new as fn
-import pandas as pd
+import sys
+import os
 
 sg.theme("Default1")
 sg.set_options(font=("Segoe UI Variable", 10))
@@ -15,13 +16,21 @@ BOM_choose = sg.FileBrowse("Select BOM",
                            key="excel",
                            pad=(5, 5))
 
+input3 = sg.Input()
+save_dir = sg.FolderBrowse("Select Save Location",
+                           key="save",
+                           pad=(5, 5))
+
 exec_button = sg.Button("Execute",
                         pad=(5, 5),
                         button_color=('White', 'NavyBlue'))
 
+
+
 window = sg.Window(title="Step Name Replace",
                    layout=[[input1, archive_choose],
                            [input2, BOM_choose],
+                           [input3, save_dir],
                            [exec_button]])
 
 while True:
@@ -30,19 +39,43 @@ while True:
     if event == sg.WIN_CLOSED or event == "Exit":
         break
 
-    # Gets correct amount of .stp files from folder when gui executed
-    stp_files = fn.stpFinder(values['source'])
-    stp_files = [item.replace("\\", "/") for item in stp_files]
-    print(stp_files)
+    if event == "Execute":
 
-    try:
-        df = fn.excelExtract(values['excel'])
+        # calls func to search directory and store stepfiles in list
+        filepaths = fn.stpFinder(values["source"])
+        filepaths = [item.replace("\\", "/") for item in filepaths]
 
+        try:
+            print(f"Source Directory: {values['source']}")
+            print(f"Source Directory: {values['excel']}")
+            print(f"Source Directory: {values['save']}")
 
+            # calls func to search directory and store stepfiles in list
+            filepaths = fn.stpFinder(values["source"])
+            filepaths = [item.replace("\\", "/") for item in filepaths]
+            print(f"Found {len(filepaths)} .stp files")
 
-    except PermissionError:
-        sg.popup("Ensure BOM is closed before executing")
+            #gets df from excel
+            df = fn.extractMREBOM(values["excel"])
 
+            #runs name replace function
+            for filepath in filepaths:
+                new_name = os.path.join(values["save"], os.path.basename(filepath).replace(".stp", "_rename.stp"))
 
+                print(f"Processing file: {filepath} -> {new_name}")
+                fn.stepNameReplace(filepath, df, new_name)
+
+            sg.popup("Process completed successfully!",
+                     font=("Segoe UI Variable", 10))
+
+        except PermissionError:
+            sg.popup("Ensure that BOM and folder locations are closed before executing\n\n"
+                     "Click OK to terminate",
+                     font=("Segoe UI Variable", 10))
+            sys.exit()
+
+        except Exception as e:
+            sg.popup(f"An error occurred: {e}",
+                     font=("Segoe UI Variable", 10))
 
 window.close()
