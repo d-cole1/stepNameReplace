@@ -4,12 +4,24 @@ import sys
 import os
 import threading
 
-sg.theme("DefaultNoMoreNagging")
-sg.set_options(font=("Segoe UI Variable", 10),
-               progress_meter_color=("#bde0eb", "#f0f0f0"), progress_meter_border_depth=(1))
+my_new_theme = {'BACKGROUND': '#212325',
+                'TEXT': '#F0F0F0',
+                'INPUT': "#343638",
+                'TEXT_INPUT': "#F0F0F0",
+                'SCROLL': "#343638",
+                'BUTTON': ('#F0F0F0', '#1e6aa4'),
+                'PROGRESS': ('#F0F0F0', '#212325'),
+                'BORDER': 1,
+                'SLIDER_DEPTH': 0,
+                'PROGRESS_DEPTH': 0}
+
+sg.theme_add_new("MyNewTheme", my_new_theme)
+sg.theme("MyNewTheme")
+
+sg.set_options(font=("Segoe UI Variable", 10))
 
 def execute_func(window, values):
-
+    try:
         # Extracts data from BOM as a panda array
         df = fn.extractMREBOM((values["excel"]))
 
@@ -18,49 +30,46 @@ def execute_func(window, values):
 
         # If it is correct, the rest of execute_func will run
         if BOM_format == True:
-            try:
-                # Calls func to search directory and store stepfiles in list
-                files = fn.stpFinder(values["source"])
-                files = [item.replace("\\", "/") for item in files]
-                print(f"Found {len(files)} .stp files")
 
-                total_files = len(files)
+            # Calls func to search directory and store stepfiles in list
+            files = fn.stpFinder(values["source"])
+            files = [item.replace("\\", "/") for item in files]
+            print(f"Found {len(files)} .stp files")
 
-                # Create new directory within source directory
-                output_dir = os.path.join(values["source"], "SNR_Output")
-                os.makedirs(output_dir, exist_ok=True)
+            total_files = len(files)
 
-                # Iterates over step files and assigns a number to each file
-                for index, file in enumerate(files):
+            # Create new directory within source directory
+            output_dir = os.path.join(values["source"], "SNR_Output")
+            os.makedirs(output_dir, exist_ok=True)
 
-                    # Creates name for output step file
-                    new_name = os.path.join(output_dir, os.path.basename(file))
+            # Iterates over step files and assigns a number to each file
+            for index, file in enumerate(files):
 
-                    # "Update" assigned to be called by elif to update status bar through each iteration
-                    window.write_event_value("Update", (index + 1, total_files))
+                # Creates name for output step file
+                new_name = os.path.join(output_dir, os.path.basename(file))
 
-                    # Runs stepNameReplace
-                    print(f"Processing file: {file}")
-                    fn.stepNameReplace(file, df, new_name)
+                # "Update" assigned to be called by elif to update status bar through each iteration
+                window.write_event_value("Update", (index + 1, total_files))
 
-                # Once loop completes, "Done" value assigned to be called by elif
-                window.write_event_value("Done", None)
+                # Runs stepNameReplace
+                print(f"Processing file: {file}")
+                fn.stepNameReplace(file, df, new_name)
 
-            except Exception as e:
-                window.write_event_value("Error", str(e))
-                """
-                If an error occurs throughout this process, the error type will be returned when values['event']
-                is called in the main loop
-                """
+            # Once loop completes, "Done" value assigned to be called by elif
+            window.write_event_value("Done", None)
+
         else:
             window.write_event_value("Error", "invalid_BOM")
+
+    except Exception as e:
+        window.write_event_value("Error", str(e))
 
 # Sets layout for GUI
 layout = [
     [sg.Input(), sg.FolderBrowse("Select Source Directory", key="source", pad=(5, 5))],
     [sg.Input(), sg.FileBrowse("Select BOM", key="excel", pad=(5, 5))],
     [sg.Button("Execute"),
-     sg.ProgressBar(100, orientation='h', size=(20, 20), key='progressbar'),
+     sg.ProgressBar(1000, orientation='h', pad=(9, 5) , size=(19, 15), key='progressbar'),
      sg.Text("", key="info")]
 ]
 
@@ -81,25 +90,23 @@ while True:
         threading.Thread(target=execute_func, args=(window, values), daemon=True).start()
 
     if event == "Error":
+        error_message = values[event]
         # print(values[event])
-        if values[event] == f"[Errno 13] Permission denied: '{values['excel']}'":
+        if "[Errno 13]" in error_message:
             sg.popup("Ensure that the BOM is closed before running.\n\n"
                      "Click OK to terminate.")
-            sys.exit()
 
-        if values[event] == "invalid_BOM":
+        elif error_message == "invalid_BOM":
             sg.popup("Ensure BOM is formatted correctly.\n(Inconsistent column lengths)\n\n"
                      "Click OK to terminate.")
-            sys.exit()
 
         else:
             sg.popup(f"An unforeseen error occurred: {values[event]}")
-            sys.exit()
-
+        break
 
     if event == "Update":
         current_file, total_files = values[event]
-        window["progressbar"].update(current_file * 100 / total_files)
+        window["progressbar"].update(current_file * 1000 / total_files)
         window["info"].update(f"Working file {current_file} of {total_files}.")
 
     if event == "Done":

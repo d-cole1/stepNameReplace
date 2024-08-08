@@ -55,4 +55,3 @@ def stepNameReplace(filepath_arg, df_arg, newName):
     file.close()
     output.close()
     return
-
