@@ -35,6 +35,9 @@ def execute_func(window, values):
             files = fn.stpFinder(values["source"])
             files = [item.replace("\\", "/") for item in files]
             print(f"Found {len(files)} .stp files")
+            if len(files) <= 0:
+                window.write_event_value("Error", "no_steps_found")
+
 
             total_files = len(files)
 
@@ -83,17 +86,25 @@ while True:
     if event == sg.WIN_CLOSED:
         break
 
-    if event == "Execute":
+    elif event == "Execute":
         print(f"Source Directory: {values['source']}")
         print(f"Source Directory: {values['excel']}")
 
         threading.Thread(target=execute_func, args=(window, values), daemon=True).start()
 
-    if event == "Error":
+    elif event == "Error":
         error_message = values[event]
         # print(values[event])
         if "[Errno 13]" in error_message:
             sg.popup("Ensure that the BOM is closed before running.\n\n"
+                     "Click OK to terminate.")
+
+        elif "[Errno 2]" in error_message:
+            sg.popup("Ensure the correct BOM is selected.\n\n"
+                     "Click OK to terminate.")
+
+        elif error_message == "no_steps_found":
+            sg.popup("No step files found, please select another folder.\n\n"
                      "Click OK to terminate.")
 
         elif error_message == "invalid_BOM":
@@ -101,17 +112,18 @@ while True:
                      "Click OK to terminate.")
 
         else:
-            sg.popup(f"An unforeseen error occurred: {values[event]}")
+            sg.popup(f"An unforeseen error occurred: {values[event]}\n\n"
+                     f"Click OK to terminate.")
         break
 
-    if event == "Update":
+    elif event == "Update":
         current_file, total_files = values[event]
         window["progressbar"].update(current_file * 1000 / total_files)
         window["info"].update(f"Working file {current_file} of {total_files}.")
 
-    if event == "Done":
-        sg.popup("Process completed successfully!",
-                 font=("Segoe UI Variable", 10))
+    elif event == "Done":
+        sg.popup("Process completed successfully!\n",
+                 font=("Segoe UI Variable", 10), custom_text="Close")
         sys.exit()
 
 window.close()
