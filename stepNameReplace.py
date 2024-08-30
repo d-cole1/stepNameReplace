@@ -17,7 +17,7 @@ my_new_theme = {'BACKGROUND': "#31363b",
 # Add and set the custom theme
 sg.theme_add_new("MyNewTheme", my_new_theme)
 sg.theme("MyNewTheme")
-sg.set_options(font=("Segoe UI Variable", 11))
+sg.set_options(font=("Helvetica", 13))
 
 logo = r"C:\Users\dominick.cole\Python\stepNameReplace\logos\applogo.ico"
 e_logo = r"C:\Users\dominick.cole\Python\stepNameReplace\logos\error.ico"
@@ -25,10 +25,12 @@ s_logo = r"C:\Users\dominick.cole\Python\stepNameReplace\logos\success.ico"
 
 # Define the layout for the GUI
 layout = [
-    [sg.Input(), sg.FolderBrowse("Select Folder to Search", key="source", pad=(5, 5))],
-    [sg.Input(), sg.FileBrowse("Select BOM", key="excel", pad=(5, 5))],
+    [sg.Text("Select folder:", size=(11, 1)), sg.Input(), sg.FolderBrowse("Browse", key="source", pad=(5, 5))],
+    [sg.Text("Select BOM:", size=(11, 1)), sg.Input(),
+     sg.FileBrowse("Browse", key="excel", pad=(5, 5), file_types=(('Excel', '.xlsx'),))],
+
     [sg.Button("Execute"),
-     sg.ProgressBar(1000, orientation='h', pad=(7, 5), size=(26, 18), key='progressbar'),
+     sg.ProgressBar(1000, orientation='h', pad=(7, 5), size=(30, 18), key='progressbar'),
      sg.Text("", key="info")]
 ]
 
@@ -48,12 +50,14 @@ while True:
 
             # Start the execution function in a new thread
             Thread(target=execute_func, args=(window, values), daemon=True).start()
+            window["Execute"].update(disabled=True)
+            window["source"].update(disabled=True)
+            window["excel"].update(disabled=True)
 
         case "Done":  # If processing is done
-            sg.popup("SUCCESS!\n\n"
-                     "A new folder named ‘SNR_Output’ will appear in the folder you"
-                     " originally selected.\n",
-                     custom_text="Exit", icon=s_logo)
+            sg.popup("A new folder named ‘SNR_Output’ will appear in the folder you"
+                     " originally selected.",
+                     custom_text="Exit", icon=s_logo, title="SUCCESS!")
             break
 
         case "Update":  # Update the progress bar
@@ -67,19 +71,19 @@ while True:
             # print(values[event])
             if "[Errno 13]" in error_message:
                 sg.popup("Ensure that the BOM is closed before running.\n",
-                         icon=e_logo, custom_text="Exit")
+                         icon=e_logo, custom_text="Exit", title="ERROR!")
 
-            elif "[Errno 2]" in error_message:
-                sg.popup("Ensure the correct BOM is selected.\n",
-                         icon=e_logo, custom_text="Exit")
+            elif error_message == "no_bom":
+                sg.popup("Ensure a BOM is selected.\n",
+                         icon=e_logo, custom_text="Exit", title="ERROR!")
 
             elif error_message == "no_steps_found":
                 sg.popup("No step files found, please select another folder.\n",
-                         icon=e_logo, custom_text="Exit")
+                         icon=e_logo, custom_text="Exit", title="ERROR!")
 
             elif error_message == "invalid_BOM":
                 sg.popup("Ensure BOM is formatted correctly.\n(Inconsistent column lengths)\n",
-                         icon=e_logo, custom_text="Exit")
+                         icon=e_logo, custom_text="Exit", title="ERROR!")
 
             else:
                 print(values[event])
