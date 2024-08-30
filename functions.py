@@ -1,6 +1,7 @@
 from pandas import read_excel
 import os
 
+
 # MAIN FUNCTION
 def execute_func(window, values):
     if not validate_inputs(window, values):
@@ -25,6 +26,7 @@ def execute_func(window, values):
     except Exception as e:
         window.write_event_value("Error", str(e))
 
+
 # HELPER FUNCTIONS
 def validate_inputs(window, values):
     try:
@@ -44,6 +46,7 @@ def validate_inputs(window, values):
     except FileNotFoundError:
         window.write_event_value("Error", "no_bom")
 
+
 # Searches the selected directory and extracts step files into a list
 def stp_finder(source_dir):
     stp_files = []  # Initialize an empty list to store step files
@@ -55,9 +58,11 @@ def stp_finder(source_dir):
     stp_files = [item.replace("\\", "/") for item in stp_files]  # Normalize the file paths
     return stp_files
 
+
 # Reads the BOM file and returns a pd DataFrame
 def extract_mre_bom(path):
     return read_excel(path, sheet_name="BOM", dtype="str")
+
 
 # Checks the format of the BOM DataFrame
 def check_bom_format(df_arg):
@@ -69,6 +74,7 @@ def check_bom_format(df_arg):
     # Check if the BOM is formatted correctly
     return des_count == num_count and type_count == part_count  # Correct
 
+
 def process_files(window, files, df, output_dir):
     for index, file in enumerate(files):
         print(index)
@@ -78,6 +84,7 @@ def process_files(window, files, df, output_dir):
 
         # Replace strings in the step file and rename the file
         step_name_replace(file, df, output_dir)
+
 
 def get_replacements(df_arg):
     # Create a dictionary for matching replacement keys with BOM description values
@@ -103,6 +110,7 @@ def get_replacements(df_arg):
         replacements[key_lower] = df_arg['DESCRIPTION'][i]
 
     return replacements
+
 
 def use_replacements(filepath_arg, replacements, output_dir):
     key_found = False
@@ -138,6 +146,7 @@ def use_replacements(filepath_arg, replacements, output_dir):
 
                 # After all replacements, write the modified line to the output file and restore original line ending
                 output.write(tmp_str.replace("\r", "\n"))
+
 
 def step_name_replace(filepath_arg, df_arg, output_dir):
     replacements = get_replacements(df_arg)

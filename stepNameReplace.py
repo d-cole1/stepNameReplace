@@ -24,14 +24,20 @@ e_logo = r"C:\Users\dominick.cole\Python\stepNameReplace\logos\error.ico"
 s_logo = r"C:\Users\dominick.cole\Python\stepNameReplace\logos\success.ico"
 
 # Define the layout for the GUI
-layout = [
-    [sg.Text("Select folder:", size=(11, 1)), sg.Input(), sg.FolderBrowse("Browse", key="source", pad=(5, 5))],
-    [sg.Text("Select BOM:", size=(11, 1)), sg.Input(),
-     sg.FileBrowse("Browse", key="excel", pad=(5, 5), file_types=(('Excel', '.xlsx'),))],
+col1 = [sg.Column([
+    [sg.Input(), sg.FolderBrowse("Browse", key="source")]], pad=((0, 0), (0, 20)))]
 
-    [sg.Button("Execute"),
-     sg.ProgressBar(1000, orientation='h', pad=(7, 5), size=(30, 18), key='progressbar'),
-     sg.Text("", key="info")]
+col2 = [sg.Column([[
+    sg.Input(), sg.FileBrowse("Browse", key="excel", file_types=(('Excel', '.xlsx'),))]], pad=((0, 0), (0, 10)))]
+
+layout = [
+    [sg.Text("Select folder to search:")],
+    [col1],
+    [sg.Text("Select reference BOM:")],
+    [col2],
+    [sg.Button("Execute", pad=((5, 0), (0, 10)))],
+    [sg.ProgressBar(1000, orientation='h', size=(0, 15), expand_x=True, key='progressbar', visible=False, pad=(5, 0))],
+    [sg.Text("", key="info", visible=False)]
 ]
 
 # Create the main window with the specified layout
@@ -48,11 +54,19 @@ while True:
 
         case "Execute":  # If the Execute button is clicked
 
-            # Start the execution function in a new thread
-            Thread(target=execute_func, args=(window, values), daemon=True).start()
-            window["Execute"].update(disabled=True)
-            window["source"].update(disabled=True)
-            window["excel"].update(disabled=True)
+            if not values["source"] or not values["excel"]:
+                sg.popup("Please select both a folder and a BOM file.", icon=e_logo, title="Input Error")
+
+            else:
+                # Start the execution function in a new thread
+                window["progressbar"].update(visible=True)
+                window["info"].update(visible=True)
+
+                Thread(target=execute_func, args=(window, values), daemon=True).start()
+
+                window["Execute"].update(disabled=True)
+                window["source"].update(disabled=True)
+                window["excel"].update(disabled=True)
 
         case "Done":  # If processing is done
             sg.popup("A new folder named ‘SNR_Output’ will appear in the folder you"
